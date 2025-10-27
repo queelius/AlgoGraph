@@ -1,0 +1,123 @@
+site_name: AlgoGraph Documentation
+site_description: Immutable graph data structures and algorithms library
+site_author: AlgoGraph Contributors
+site_url: https://github.com/released/AlgoGraph
+
+# Repository
+repo_name: AlgoGraph
+repo_url: https://github.com/released/AlgoGraph
+
+# Theme
+theme:
+  name: material
+  palette:
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: blue
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.code.annotate
+  icon:
+    repo: fontawesome/brands/github
+
+# Extensions
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+
+# Plugins
+plugins:
+  - search
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: google
+            show_source: true
+
+# Navigation
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Basic Examples: getting-started/examples.md
+  - User Guide:
+      - Core Concepts: user-guide/core-concepts.md
+      - Working with Vertices: user-guide/vertices.md
+      - Working with Edges: user-guide/edges.md
+      - Building Graphs: user-guide/graphs.md
+      - Graph Algorithms: user-guide/algorithms.md
+      - Serialization: user-guide/serialization.md
+      - AlgoTree Integration: user-guide/algotree-integration.md
+  - Interactive Shell:
+      - Shell Overview: shell/overview.md
+      - Navigation Commands: shell/navigation.md
+      - Query Commands: shell/queries.md
+      - Advanced Features: shell/advanced.md
+  - API Reference:
+      - Vertex: api/vertex.md
+      - Edge: api/edge.md
+      - Graph: api/graph.md
+      - Algorithms:
+          - Traversal: api/algorithms/traversal.md
+          - Shortest Path: api/algorithms/shortest_path.md
+          - Connectivity: api/algorithms/connectivity.md
+          - Spanning Tree: api/algorithms/spanning_tree.md
+      - Serialization: api/serialization.md
+      - Interoperability: api/interop.md
+      - Shell: api/shell.md
+  - Examples & Cookbook:
+      - Social Networks: examples/social-networks.md
+      - Road Networks: examples/road-networks.md
+      - Dependency Graphs: examples/dependency-graphs.md
+      - Real-World Use Cases: examples/use-cases.md
+  - Design & Philosophy:
+      - Immutability: design/immutability.md
+      - Composability: design/composability.md
+      - Separation of Concerns: design/separation.md
+  - Contributing: contributing.md
+
+# Extra
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/released/AlgoGraph
+
+# Copyright
+copyright: Copyright &copy; 2025 AlgoGraph Contributors
