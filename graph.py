@@ -46,6 +46,67 @@ class Graph:
         if not isinstance(self.edges, set):
             object.__setattr__(self, 'edges', set(self.edges))
 
+    @classmethod
+    def builder(cls) -> 'GraphBuilder':
+        """
+        Create a GraphBuilder for fluent graph construction.
+
+        Returns:
+            New GraphBuilder instance
+
+        Example:
+            >>> g = (Graph.builder()
+            ...      .add_vertex('A', value=1)
+            ...      .add_edge('A', 'B', weight=5)
+            ...      .build())
+        """
+        from .builder import GraphBuilder
+        return GraphBuilder()
+
+    @classmethod
+    def from_edges(cls, *edges: Tuple[str, str], directed: bool = True, weight: float = 1.0) -> 'Graph':
+        """
+        Create graph from list of edge tuples.
+
+        Args:
+            *edges: Variable number of (source, target) tuples
+            directed: Whether edges are directed (default: True)
+            weight: Weight for all edges (default: 1.0)
+
+        Returns:
+            New Graph
+
+        Example:
+            >>> g = Graph.from_edges(('A', 'B'), ('B', 'C'), ('C', 'A'))
+            >>> g.vertex_count
+            3
+        """
+        from .builder import GraphBuilder
+        builder = GraphBuilder()
+        for source, target in edges:
+            builder.add_edge(source, target, directed=directed, weight=weight)
+        return builder.build()
+
+    @classmethod
+    def from_vertices(cls, *vertex_ids: str, **common_attrs) -> 'Graph':
+        """
+        Create graph from list of vertex IDs.
+
+        Args:
+            *vertex_ids: Variable number of vertex IDs
+            **common_attrs: Attributes to apply to all vertices
+
+        Returns:
+            New Graph with no edges
+
+        Example:
+            >>> g = Graph.from_vertices('A', 'B', 'C', layer=1)
+            >>> g.vertex_count
+            3
+        """
+        vertices = {Vertex(vid, attrs=common_attrs) for vid in vertex_ids}
+        return cls(vertices, set())
+
     @property
     def vertex_count(self) -> int:
         """Get number of vertices."""

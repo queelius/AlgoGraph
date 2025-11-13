@@ -29,6 +29,7 @@ Integration with AlgoTree:
 from .vertex import Vertex
 from .edge import Edge
 from .graph import Graph
+from .builder import GraphBuilder
 from .interop import (
     tree_to_graph,
     node_to_graph,
@@ -48,12 +49,13 @@ from .serialization import (
 # Algorithms are available in submodule
 # from AlgoGraph.algorithms import dfs, bfs, dijkstra, etc.
 
-__version__ = "1.0.0"
+__version__ = "1.2.0"
 
 __all__ = [
     'Vertex',
     'Edge',
     'Graph',
+    'GraphBuilder',
     'tree_to_graph',
     'node_to_graph',
     'graph_to_tree',
