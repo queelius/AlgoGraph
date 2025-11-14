@@ -49,7 +49,7 @@ from .serialization import (
 # Algorithms are available in submodule
 # from AlgoGraph.algorithms import dfs, bfs, dijkstra, etc.
 
-__version__ = "1.2.0"
+__version__ = "1.3.0"
 
 __all__ = [
     'Vertex',
