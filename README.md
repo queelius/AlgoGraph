@@ -15,7 +15,9 @@ AlgoGraph provides immutable graph data structures with a clean, functional API.
 - **Attributes**: Both vertices and edges can carry arbitrary attributes
 - **Interoperability**: Convert between trees (AlgoTree) and graphs (AlgoGraph)
 - **Interactive shell**: VFS-like interface for graph exploration
-- **Comprehensive algorithms**: 30+ graph algorithms included
+- **Comprehensive algorithms**: 56+ graph algorithms across 8 categories
+- **Fluent builder API**: Construct graphs with 82% less code
+- **Research-based**: Algorithms from peer-reviewed literature
 
 ## Core Classes
 
@@ -192,6 +194,64 @@ from AlgoGraph.algorithms import minimum_spanning_tree, kruskal, prim
 mst = minimum_spanning_tree(graph)  # Uses Kruskal by default
 mst = kruskal(graph)
 mst = prim(graph, start='A')
+```
+
+### Centrality (NEW in v1.3.0)
+
+```python
+from AlgoGraph.algorithms import (
+    pagerank, betweenness_centrality, closeness_centrality
+)
+
+# Find influencers with PageRank
+pr = pagerank(social_network)
+top_influencer = max(pr, key=pr.get)
+
+# Find bridge people with betweenness
+bc = betweenness_centrality(network)
+top_broker = max(bc, key=bc.get)
+
+# Find central nodes with closeness
+cc = closeness_centrality(network)
+```
+
+### Flow Networks (NEW in v1.3.0)
+
+```python
+from AlgoGraph.algorithms import max_flow, min_cut
+
+# Maximum flow from source to sink
+flow_value = max_flow(network, 'Source', 'Sink')
+
+# Find bottleneck (minimum cut)
+cut_value, source_set, sink_set = min_cut(network, 'Source', 'Sink')
+```
+
+### Matching (NEW in v1.3.0)
+
+```python
+from AlgoGraph.algorithms import hopcroft_karp, is_perfect_matching
+
+# Maximum bipartite matching (job assignment)
+workers = {'Alice', 'Bob', 'Charlie'}
+jobs = {'Backend', 'Frontend', 'DevOps'}
+matching = hopcroft_karp(assignments, workers, jobs)
+
+# Check if everyone can be matched
+if is_perfect_matching(assignments, workers, jobs):
+    print("Everyone gets a job!")
+```
+
+### Graph Coloring (NEW in v1.3.0)
+
+```python
+from AlgoGraph.algorithms import welsh_powell, chromatic_number
+
+# Exam scheduling (minimize time slots)
+conflicts = build_conflict_graph(exams)
+coloring = welsh_powell(conflicts)
+num_slots = chromatic_number(conflicts)
+print(f"Need {num_slots} exam time slots")
 ```
 
 ## Design Philosophy
