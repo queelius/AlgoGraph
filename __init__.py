@@ -1,14 +1,19 @@
 """
 AlgoGraph - Graph Data Structures and Algorithms
 
-A companion library to AlgoTree for working with graph structures.
-Provides immutable graph operations, algorithms, and interoperability with trees.
+A modern, immutable graph library with elegant functional APIs.
+Provides transformers, selectors, and lazy views for productive graph programming.
 
 Core Components:
 - Vertex: Immutable graph vertices with attributes
 - Edge: Immutable directed/undirected edges with weights
-- Graph: Immutable graph container with algorithms
-- interop: Conversion functions between trees and graphs
+- Graph: Immutable graph container with 56+ algorithms
+- GraphBuilder: Fluent API for graph construction
+
+Advanced Features (v2.0.0):
+- Transformers: Composable transformations with | pipe operator
+- Selectors: Declarative queries with logical operators
+- Views: Lazy evaluation for efficient filtering
 
 Example:
     >>> from AlgoGraph import Vertex, Edge, Graph
@@ -17,6 +22,19 @@ Example:
     >>> g = Graph({v1, v2}, {e})
     >>> g.has_edge('A', 'B')
     True
+
+Transformer Pipeline:
+    >>> from AlgoGraph.transformers import filter_vertices, to_dict
+    >>> result = graph | filter_vertices(lambda v: v.get('active')) | to_dict()
+
+Declarative Selectors:
+    >>> from AlgoGraph.graph_selectors import vertex as v
+    >>> matches = graph.select_vertices(v.attrs(age=lambda a: a > 30) & v.degree(min_degree=5))
+
+Lazy Views:
+    >>> from AlgoGraph.views import filtered_view
+    >>> view = filtered_view(large_graph, vertex_filter=lambda v: v.get('active'))
+    >>> small_graph = view.materialize()  # Lazy, no copying until now
 
 Integration with AlgoTree:
     >>> from AlgoTree import Node, Tree
@@ -49,7 +67,12 @@ from .serialization import (
 # Algorithms are available in submodule
 # from AlgoGraph.algorithms import dfs, bfs, dijkstra, etc.
 
-__version__ = "1.3.0"
+# Transformers, selectors, and views are available in submodules
+# from AlgoGraph.transformers import filter_vertices, map_vertices, etc.
+# from AlgoGraph.graph_selectors import vertex, edge
+# from AlgoGraph.views import filtered_view, subgraph_view, etc.
+
+__version__ = "2.0.0"
 
 __all__ = [
     'Vertex',

@@ -437,6 +437,54 @@ class Graph:
         """
         return {e for e in self.edges if predicate(e)}
 
+    def select_vertices(self, selector: 'VertexSelector') -> Set[Vertex]:
+        """
+        Select vertices using a Selector.
+
+        Enables declarative vertex selection with composable selectors.
+
+        Args:
+            selector: VertexSelector instance
+
+        Returns:
+            Set of matching vertices
+
+        Example:
+            >>> from AlgoGraph.selectors import vertex as v
+            >>> g = Graph({Vertex('A', attrs={'age': 30}), Vertex('B', attrs={'age': 25})})
+            >>> matches = g.select_vertices(v.attrs(age=lambda a: a > 27))
+            >>> len(matches)
+            1
+        """
+        from AlgoGraph.graph_selectors import VertexSelector
+        if not isinstance(selector, VertexSelector):
+            raise TypeError("selector must be a VertexSelector instance")
+        return set(selector.select(self))
+
+    def select_edges(self, selector: 'EdgeSelector') -> Set[Edge]:
+        """
+        Select edges using a Selector.
+
+        Enables declarative edge selection with composable selectors.
+
+        Args:
+            selector: EdgeSelector instance
+
+        Returns:
+            Set of matching edges
+
+        Example:
+            >>> from AlgoGraph.graph_selectors import edge as e
+            >>> g = Graph(edges={Edge('A', 'B', weight=5), Edge('B', 'C', weight=10)})
+            >>> heavy = g.select_edges(e.weight(min_weight=7))
+            >>> len(heavy)
+            1
+        """
+        from AlgoGraph.graph_selectors import EdgeSelector
+        if not isinstance(selector, EdgeSelector):
+            raise TypeError("selector must be an EdgeSelector instance")
+        return set(selector.select(self))
+
     def subgraph(self, vertex_ids: Set[str]) -> 'Graph':
         """
         Extract subgraph containing only specified vertices.
