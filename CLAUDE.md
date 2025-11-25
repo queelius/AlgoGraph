@@ -4,194 +4,206 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-AlgoGraph is an immutable graph data structures and algorithms library with optional AlgoTree integration. It provides directed/undirected graphs with weighted edges, vertex/edge attributes, and 30+ graph algorithms organized by category.
+AlgoGraph is an immutable graph library with 56+ algorithms, functional transformers, declarative selectors, and lazy views. Version 2.0.0 brings AlgoTree-level API elegance to graph programming with pipe-based composition and ~90% code reduction for common operations.
 
-## Development Environment
+**Primary Interface:** The Python API (Graph, Vertex, Edge, transformers, selectors) is the recommended approach for scripting, automation, and programmatic use.
 
-### PYTHONPATH Setup
-AlgoGraph requires the parent `released/` directory in PYTHONPATH:
+**Secondary Interface:** The interactive shell is for exploration and terminal-based workflows - not for scripting or automation.
+
+## Development Commands
+
+### Environment Setup
 ```bash
-cd /home/spinoza/github/released
-export PYTHONPATH=.
+# From the AlgoGraph directory or parent
+export PYTHONPATH=/path/to/released:$PYTHONPATH
 ```
-
-This enables both standalone use and optional AlgoTree interop features.
 
 ### Running Tests
 ```bash
-# From AlgoGraph directory
-cd /home/spinoza/github/released/AlgoGraph
+# All tests (213 tests)
+python -m pytest test/
 
-# Run all tests
-pytest test/
+# Specific test file
+python -m pytest test/test_algorithms.py
+python -m pytest test/test_phase3_features.py
 
-# Run specific test file
-pytest test/test_algorithms.py
-pytest test/test_interop.py
-pytest test/test_shell.py
+# Single test
+python -m pytest test/test_algorithms.py::TestTraversal::test_dfs_simple
 
-# Run with verbose output
-pytest -v test/
-
-# Run specific test class or method
-pytest test/test_algorithms.py::TestTraversal::test_dfs_simple
-
-# Run with coverage
-pytest --cov=. --cov-report=html test/
+# With coverage
+python -m pytest --cov=. --cov-report=html test/
 ```
 
-### Graph Serialization
+### Building & Publishing
 ```bash
-# Save/load graphs to JSON
-from AlgoGraph import Graph, Vertex, Edge, save_graph, load_graph
+# Build distribution (uses pyproject.toml)
+python -m build
 
-# Save graph
-save_graph(graph, 'my_graph.json')
+# Check package
+twine check dist/*
 
-# Load graph
-graph = load_graph('my_graph.json')
+# Upload to PyPI
+twine upload dist/*
 ```
 
-### Interactive Shell
+### Interactive Shell (For Exploration Only)
 ```bash
-cd /home/spinoza/github/released
-export PYTHONPATH=.
-
-# Start with sample graph
-python -m AlgoGraph.shell.shell
-
-# Or load a graph from file
-python -m AlgoGraph.shell.shell my_graph.json
+python -m AlgoGraph.shell.shell              # Sample graph
+python -m AlgoGraph.shell.shell graph.json   # Load from file
+algograph                                     # CLI entry point (if installed)
 ```
 
-The shell provides a VFS-like interface where you can `cd` into vertices, `ls` their attributes, navigate neighbors, and run graph queries (`path`, `shortest`, `components`, `bfs`).
-
-**Features:**
-- File I/O: Load graphs from JSON files, save with `save` command
-- Tab completion: Press TAB to complete commands and vertex names
-- Command history: Use UP/DOWN arrows to recall commands
-- Absolute paths: Use `cd /vertex` to jump directly to any vertex
-- Quoted names: Use `cd "Alice Smith"` for vertex names with spaces
+**Note:** For scripting and automation, always use the Python API, not the shell.
 
 ## Architecture
 
-### Core Immutable Data Structures
+### Core Layer (Immutable Data Structures)
 
-1. **Vertex** (`vertex.py`): Immutable graph vertices with arbitrary attributes
-   - Methods: `with_attrs()`, `without_attrs()`, `get()`
-   - Hashable by ID for set/dict usage
-
-2. **Edge** (`edge.py`): Immutable edges connecting vertices
-   - Supports directed/undirected
-   - Optional weight and attributes
-   - Methods: `with_weight()`, `reversed()`, `connects()`
-
-3. **Graph** (`graph.py`): Immutable graph container
-   - Stores sets of vertices and edges
-   - All operations return new Graph instances
-   - Query methods: `neighbors()`, `degree()`, `has_vertex()`, `has_edge()`
-   - Construction: `add_vertex()`, `add_edge()`, `remove_vertex()`, `subgraph()`
-
-### Algorithm Organization
-
-Algorithms are in `algorithms/` and imported via `algorithms/__init__.py`:
-
-- **Traversal** (`traversal.py`): DFS, BFS, topological sort, cycle detection, path finding
-- **Shortest Path** (`shortest_path.py`): Dijkstra, Bellman-Ford, Floyd-Warshall, A*
-- **Connectivity** (`connectivity.py`): Connected components, SCC, bipartite checking, bridges, articulation points
-- **Spanning Tree** (`spanning_tree.py`): Kruskal, Prim, MST utilities
-
-### Serialization Layer
-
-`serialization.py` provides JSON file I/O:
-- `graph_to_json()` / `graph_from_json()`: Convert graphs to/from JSON strings
-- `save_graph()` / `load_graph()`: Save/load graphs to/from JSON files
-- Preserves all graph data: vertices, edges, attributes, weights, directed/undirected
-- Human-readable JSON format
-
-### Interoperability Layer
-
-**Optional dependency**: Requires AlgoTree in PYTHONPATH
-
-`interop.py` provides bidirectional conversion:
-- `tree_to_graph()` / `node_to_graph()`: Convert tree hierarchies to graphs
-- `graph_to_tree()`: Extract spanning tree from graph
-- `flat_dict_to_graph()` / `graph_to_flat_dict()`: Interchange format compatible with AlgoTree's flat exporter
-
-### Interactive Shell
-
-Multi-file design in `shell/`:
-- `context.py`: Immutable navigation state (GraphContext)
-- `commands.py`: Command classes with execute() method (including SaveCommand)
-- `shell.py`: REPL with readline integration for tab completion and history
-- `cli.py`: Entry point with file loading support
-- `serialization.py`: Graph save/load functionality
-
-Navigation model treats graphs as filesystems:
-- `/` = root (all vertices)
-- `/vertex_id` = at a vertex (shows attributes + neighbors/)
-- `/vertex_id/neighbors` = neighbor view mode
-
-**Command Parsing:**
-- Uses `shlex.split()` for proper quote handling
-- Supports vertex names with spaces via quotes: `cd "Alice Smith"`
-- Tab completion for commands and vertex names (context-aware)
-- Command history via readline (UP/DOWN arrows)
-
-**Path Navigation:**
-- Relative: `cd vertex` - navigate to neighbor or any vertex
-- Absolute: `cd /vertex` - jump directly to any vertex from anywhere
-- Special: `cd ..` (up), `cd /` (root), `cd neighbors` (neighbors mode)
-
-## Key Design Principles
-
-1. **Immutability**: All graph operations return new objects; no in-place mutation
-2. **Composability**: Operations chain naturally (e.g., `g.add_vertex(v).add_edge(e)`)
-3. **Separation**: Data structures (Graph/Vertex/Edge) are separate from algorithms
-4. **Type Safety**: Full type hints throughout
-5. **Functional Style**: Prefer pure functions in algorithms module
-
-## Testing Strategy
-
-Test files mirror the module structure:
-- `test/test_algorithms.py`: Algorithm correctness tests organized by category
-- `test/test_interop.py`: Tree-graph conversion tests (requires AlgoTree)
-- `test/test_shell.py`: Shell navigation and command tests (38 tests)
-  - Original shell functionality (29 tests)
-  - Serialization (2 tests)
-  - Save command (2 tests)
-  - Absolute paths (3 tests)
-  - Quoted vertex names (2 tests)
-
-Tests use pytest and follow pattern: arrange graph → run algorithm → assert expected result.
-
-**Coverage:** All shell improvements are fully tested with 100% test success rate.
-
-## Common Patterns
-
-### Creating Graphs
-```python
-from AlgoGraph import Graph, Vertex, Edge
-
-# Method 1: Construct with sets
-g = Graph({Vertex('A'), Vertex('B')}, {Edge('A', 'B')})
-
-# Method 2: Build incrementally (returns new graphs)
-g = Graph().add_vertex(Vertex('A')).add_edge(Edge('A', 'B'))
+```
+vertex.py     → Vertex: Immutable vertices with arbitrary attributes
+edge.py       → Edge: Directed/undirected edges with weights and attributes
+graph.py      → Graph: Immutable container with query/modification methods
+builder.py    → GraphBuilder: Fluent API for graph construction
 ```
 
-### Running Algorithms
+**Key Pattern**: All operations return new objects. Chain with `g.add_vertex(v).add_edge(e)`.
+
+### Algorithm Layer (56+ Algorithms)
+
+```
+algorithms/
+├── traversal.py      → DFS, BFS, topological sort, cycle detection, path finding
+├── shortest_path.py  → Dijkstra, Bellman-Ford, Floyd-Warshall, A*
+├── connectivity.py   → Components, SCC, bipartite, bridges, articulation points
+├── spanning_tree.py  → Kruskal, Prim, MST utilities
+├── centrality.py     → PageRank, betweenness, closeness, eigenvector, degree
+├── flow.py           → Edmonds-Karp, Ford-Fulkerson, max flow, min cut
+├── matching.py       → Hopcroft-Karp, maximum bipartite matching
+└── coloring.py       → Welsh-Powell, DSatur, chromatic number, edge coloring
+```
+
+### Advanced Features Layer (v2.0.0)
+
+```
+transformers.py      → Pipe-based composition with | operator
+                       filter_vertices, map_edges, largest_component, stats, etc.
+
+graph_selectors.py   → Declarative queries with logical operators (&, |, ~, ^)
+                       vertex.attrs(), vertex.degree(), edge.weight(), etc.
+
+views.py             → Lazy evaluation without copying
+                       FilteredView, SubGraphView, NeighborhoodView, etc.
+```
+
+**Pipe Pattern**: `graph | filter_vertices(pred) | largest_component() | stats()`
+
+**Selector Pattern**: `graph.select_vertices(v.attrs(active=True) & v.degree(min_degree=5))`
+
+**View Pattern**: `filtered_view(graph, vertex_filter=pred).materialize()`
+
+### Supporting Layers
+
+```
+serialization.py  → JSON save/load: save_graph(), load_graph()
+interop.py        → AlgoTree conversion (optional): tree_to_graph(), graph_to_tree()
+
+shell/
+├── context.py    → Immutable navigation state (GraphContext)
+├── commands.py   → Command classes with execute() method
+├── shell.py      → REPL with readline tab completion
+└── cli.py        → Entry point for algograph command
+```
+
+## Key Design Patterns
+
+### Immutability
+All graph operations return new Graph instances:
 ```python
-from AlgoGraph.algorithms import dijkstra, bfs, connected_components
+g2 = g.add_vertex(Vertex('A'))  # g unchanged, g2 is new
+g3 = g2.add_edge(Edge('A', 'B'))  # g2 unchanged
+```
+
+### Selector Type Inheritance
+Logical combinators dynamically inherit from VertexSelector/EdgeSelector to pass isinstance() checks:
+```python
+# In graph_selectors.py, AndSelector.__init__ does:
+if isinstance(left, VertexSelector):
+    self.__class__ = type('AndVertexSelector', (AndSelector, VertexSelector), {})
+```
+
+### Transformer Pipe Operator
+Transformers implement `__ror__` for right-hand pipe support:
+```python
+def __ror__(self, other: T) -> S:
+    return self(other)  # Enables: graph | transformer
+```
+
+## Test Organization
+
+```
+test/
+├── test_algorithms.py        → Core algorithm tests (27 tests)
+├── test_builder.py           → GraphBuilder fluent API tests (33 tests)
+├── test_interop.py           → AlgoTree conversion tests (13 tests, skipped without AlgoTree)
+├── test_shell.py             → Shell navigation/commands (38 tests)
+├── test_phase2_algorithms.py → Centrality, flow, matching, coloring (36 tests)
+├── test_phase3_features.py   → Transformers, selectors, views (40 tests)
+└── test_phase3_coverage.py   → Additional coverage tests (30 tests)
+```
+
+Total: 213 tests passing (13 skipped when AlgoTree unavailable)
+
+## Module Naming Note
+
+`graph_selectors.py` is named to avoid conflict with Python's built-in `selectors` module (I/O multiplexing). Do not rename to `selectors.py`.
+
+## Graph Construction Patterns
+
+```python
+# Direct construction
+g = Graph({Vertex('A'), Vertex('B')}, {Edge('A', 'B')})
+
+# Fluent builder
+g = (Graph.builder()
+     .add_vertex('A', age=30)
+     .add_edge('A', 'B', weight=5.0)
+     .add_path('B', 'C', 'D')
+     .build())
+
+# From edges (auto-creates vertices)
+g = Graph.from_edges(('A', 'B'), ('B', 'C'))
+```
+
+## Algorithm Usage
+
+```python
+from AlgoGraph.algorithms import dijkstra, pagerank, connected_components
 
 distances = dijkstra(graph, source='A')
-order = bfs(graph, start='A')
+pr = pagerank(social_network)
 components = connected_components(graph)
 ```
 
-### AlgoTree Integration
-Only import interop functions when AlgoTree integration is needed:
+## Advanced Features Usage
+
 ```python
-from AlgoGraph import tree_to_graph, graph_to_tree
-# Requires: export PYTHONPATH=/path/to/released:$PYTHONPATH
+# Transformers
+from AlgoGraph.transformers import filter_vertices, largest_component, stats
+result = graph | filter_vertices(lambda v: v.get('active')) | stats()
+
+# Selectors
+from AlgoGraph.graph_selectors import vertex as v, edge as e
+matches = graph.select_vertices(v.attrs(role='admin') | v.degree(min_degree=10))
+
+# Views
+from AlgoGraph.views import filtered_view, neighborhood_view
+view = neighborhood_view(graph, center='A', k=2)
+subgraph = view.materialize()
 ```
+
+## Important Reminders
+
+- Do what has been asked; nothing more, nothing less
+- NEVER create files unless absolutely necessary
+- ALWAYS prefer editing an existing file to creating a new one
+- NEVER proactively create documentation files (*.md) or README files unless explicitly requested

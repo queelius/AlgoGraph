@@ -83,6 +83,9 @@ nav:
       - Working with Edges: user-guide/edges.md
       - Building Graphs: user-guide/graphs.md
       - Graph Algorithms: user-guide/algorithms.md
+      - Transformers: user-guide/transformers.md
+      - Selectors: user-guide/selectors.md
+      - Views: user-guide/views.md
       - Serialization: user-guide/serialization.md
       - AlgoTree Integration: user-guide/algotree-integration.md
   - Interactive Shell:

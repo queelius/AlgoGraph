@@ -1,188 +1,223 @@
 # AlgoGraph
 
-Independent graph data structures and algorithms library with optional AlgoTree integration.
+Immutable graph data structures and algorithms library with functional transformers, declarative selectors, and lazy views.
+
+[![PyPI version](https://badge.fury.io/py/AlgoGraph.svg)](https://pypi.org/project/AlgoGraph/)
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+## Installation
+
+```bash
+pip install AlgoGraph
+```
 
 ## Overview
 
-AlgoGraph provides immutable graph data structures with a clean, functional API. It works standalone and optionally integrates with AlgoTree for seamless interoperability between tree and graph representations.
+AlgoGraph provides immutable graph data structures with a clean, functional API. Version 2.0.0 brings AlgoTree-level API elegance with pipe-based transformers, declarative selectors, and lazy views—achieving ~90% code reduction for common operations.
 
 ## Key Features
 
 - **Immutable by default**: All operations return new graph objects
-- **Type-safe**: Full type hints for IDE support
-- **Directed and undirected**: Support for both edge types
-- **Weighted edges**: Built-in support for edge weights
-- **Attributes**: Both vertices and edges can carry arbitrary attributes
-- **Interoperability**: Convert between trees (AlgoTree) and graphs (AlgoGraph)
-- **Interactive shell**: VFS-like interface for graph exploration
-- **Comprehensive algorithms**: 56+ graph algorithms across 8 categories
+- **56+ algorithms**: Traversal, shortest path, centrality, flow, matching, coloring
+- **Pipe-based transformers**: Composable operations with `|` operator (v2.0.0)
+- **Declarative selectors**: Pattern matching with logical operators (v2.0.0)
+- **Lazy views**: Memory-efficient filtering without copying (v2.0.0)
 - **Fluent builder API**: Construct graphs with 82% less code
-- **Research-based**: Algorithms from peer-reviewed literature
+- **Type-safe**: Full type hints for IDE support
+- **Optional AlgoTree integration**: Convert between trees and graphs
+
+## Quick Start
+
+```python
+from AlgoGraph import Graph, Vertex, Edge
+
+# Create a graph
+g = (Graph.builder()
+     .add_vertex('A', age=30)
+     .add_vertex('B', age=25)
+     .add_edge('A', 'B', weight=5.0)
+     .build())
+
+# Query the graph
+g.has_edge('A', 'B')  # True
+g.neighbors('A')       # {'B'}
+
+# Run algorithms
+from AlgoGraph.algorithms import dijkstra, pagerank
+distances = dijkstra(g, source='A')
+```
+
+## Advanced Features (v2.0.0)
+
+### Transformer Pipelines
+
+Compose graph operations using the `|` pipe operator:
+
+```python
+from AlgoGraph.transformers import filter_vertices, largest_component, stats
+
+# Filter → extract component → compute stats
+result = (graph
+    | filter_vertices(lambda v: v.get('active'))
+    | largest_component()
+    | stats())
+
+# result: {'vertex_count': 42, 'edge_count': 156, 'density': 0.18, ...}
+```
+
+**Available Transformers:**
+- `filter_vertices(pred)`, `filter_edges(pred)` - Filter by predicate
+- `map_vertices(fn)`, `map_edges(fn)` - Transform attributes
+- `reverse()`, `to_undirected()` - Structure transformations
+- `largest_component()`, `minimum_spanning_tree()` - Algorithm-based
+- `to_dict()`, `to_adjacency_list()`, `stats()` - Export operations
+
+### Declarative Selectors
+
+Query vertices and edges with logical operators:
+
+```python
+from AlgoGraph.graph_selectors import vertex as v, edge as e
+
+# Find active users with high degree
+power_users = graph.select_vertices(
+    v.attrs(active=True) & v.degree(min_degree=10)
+)
+
+# Find heavy edges from admin nodes
+admin_edges = graph.select_edges(
+    e.source(v.attrs(role='admin')) & e.weight(min_weight=100)
+)
+
+# Complex queries with OR, NOT, XOR
+special = graph.select_vertices(
+    (v.attrs(vip=True) | v.degree(min_degree=50)) & ~v.attrs(banned=True)
+)
+```
+
+**Selector Types:**
+- `vertex.id(pattern)` - Match by ID (glob/regex)
+- `vertex.attrs(**attrs)` - Match attributes (supports callables)
+- `vertex.degree(min/max/exact)` - Match by degree
+- `edge.weight(min/max/exact)` - Match by weight
+- `edge.source(selector)`, `edge.target(selector)` - Match endpoints
+
+### Lazy Views
+
+Efficient filtering without copying data:
+
+```python
+from AlgoGraph.views import filtered_view, neighborhood_view
+
+# Create view without copying
+view = filtered_view(
+    large_graph,
+    vertex_filter=lambda v: v.get('active'),
+    edge_filter=lambda e: e.weight > 5.0
+)
+
+# Iterate lazily
+for vertex in view.vertices():
+    process(vertex)
+
+# Materialize only when needed
+small_graph = view.materialize()
+
+# Explore k-hop neighborhood
+local = neighborhood_view(graph, center='Alice', k=2)
+```
+
+**View Types:**
+- `filtered_view()` - Filter vertices/edges
+- `subgraph_view()` - View specific vertices
+- `reversed_view()` - Reverse edge directions
+- `undirected_view()` - View as undirected
+- `neighborhood_view()` - k-hop neighborhood
 
 ## Core Classes
 
 ### Vertex
 
-Immutable graph vertex with attributes:
-
 ```python
 from AlgoGraph import Vertex
 
-# Create vertex
 v = Vertex('A', attrs={'value': 10, 'color': 'red'})
-
-# Immutable updates
-v2 = v.with_attrs(value=20)
-v3 = v.without_attrs('color')
+v2 = v.with_attrs(value=20)      # Immutable update
+v3 = v.without_attrs('color')    # Remove attribute
 ```
 
 ### Edge
 
-Immutable edge connecting two vertices:
-
 ```python
 from AlgoGraph import Edge
 
-# Directed edge with weight
-e1 = Edge('A', 'B', directed=True, weight=5.0)
-
-# Undirected edge
-e2 = Edge('A', 'C', directed=False)
-
-# With attributes
-e3 = Edge('B', 'C', weight=3.0, attrs={'label': 'highway'})
-
-# Immutable updates
-e4 = e1.with_weight(10.0)
-e5 = e1.reversed()  # B -> A
+e = Edge('A', 'B', directed=True, weight=5.0)
+e2 = e.with_weight(10.0)  # Immutable update
+e3 = e.reversed()         # B -> A
 ```
 
 ### Graph
 
-Immutable graph container:
-
 ```python
 from AlgoGraph import Graph, Vertex, Edge
 
-# Build graph
-v1, v2, v3 = Vertex('A'), Vertex('B'), Vertex('C')
-e1 = Edge('A', 'B', weight=2.0)
-e2 = Edge('B', 'C', weight=3.0)
+# Direct construction
+g = Graph({Vertex('A'), Vertex('B')}, {Edge('A', 'B')})
 
-g = Graph({v1, v2, v3}, {e1, e2})
+# Fluent builder
+g = (Graph.builder()
+     .add_vertex('A', age=30)
+     .add_edge('A', 'B', weight=5.0)
+     .add_path('B', 'C', 'D')
+     .add_cycle('X', 'Y', 'Z')
+     .build())
 
-# Query graph
-g.has_vertex('A')          # True
-g.has_edge('A', 'B')       # True
-g.degree('A')              # 1
-g.neighbors('B')           # {'C'}
+# From edges (auto-creates vertices)
+g = Graph.from_edges(('A', 'B'), ('B', 'C'), ('C', 'A'))
 
-# Immutable updates
+# Immutable operations
 g2 = g.add_vertex(Vertex('D'))
-g3 = g.add_edge(Edge('C', 'D'))
-g4 = g.remove_vertex('A')
+g3 = g.remove_vertex('A')
+g4 = g.subgraph({'B', 'C', 'D'})
 ```
 
-## Interoperability with AlgoTree (Optional)
-
-**Note**: The interop functions require AlgoTree to be installed or available in PYTHONPATH.
-
-Convert between trees and graphs seamlessly:
-
-```python
-from AlgoTree import Node, Tree
-from AlgoGraph import tree_to_graph, graph_to_tree
-
-# Tree to Graph
-tree = Tree(Node('root',
-    Node('child1', Node('grandchild')),
-    Node('child2')
-))
-
-graph = tree_to_graph(tree)
-# Graph with 4 vertices, 3 edges (root->child1, root->child2, child1->grandchild)
-
-# Graph to Tree (extracts spanning tree)
-recovered_tree = graph_to_tree(graph, 'root')
-```
-
-### Flat Dictionary Format
-
-Both AlgoTree and AlgoGraph support a flat dictionary interchange format:
-
-```python
-from AlgoGraph import graph_to_flat_dict, flat_dict_to_graph
-
-# Graph to flat dict
-flat = graph_to_flat_dict(graph)
-# {
-#     'root': {'.name': 'root', '.edges': [{'target': 'child1', ...}], ...},
-#     'child1': {'.name': 'child1', '.edges': [...], ...},
-#     ...
-# }
-
-# Flat dict to graph
-recovered = flat_dict_to_graph(flat)
-```
-
-This format is compatible with AlgoTree's flat exporter, enabling easy data exchange.
-
-## Graph Algorithms
-
-AlgoGraph includes common graph algorithms (in `algorithms/` module):
+## Algorithms
 
 ### Traversal
 
 ```python
-from AlgoGraph.algorithms import dfs, bfs, topological_sort
+from AlgoGraph.algorithms import dfs, bfs, topological_sort, has_cycle, find_path
 
-# Depth-first search
 visited = dfs(graph, start_vertex='A')
-
-# Breadth-first search
 levels = bfs(graph, start_vertex='A')
-
-# Topological sort (DAG only)
-ordered = topological_sort(graph)
+order = topological_sort(graph)  # DAG only
+path = find_path(graph, 'A', 'Z')
 ```
 
 ### Shortest Paths
 
 ```python
-from AlgoGraph.algorithms import dijkstra, bellman_ford, floyd_warshall
+from AlgoGraph.algorithms import dijkstra, bellman_ford, floyd_warshall, a_star
 
-# Single-source shortest path (Dijkstra)
 distances = dijkstra(graph, source='A')
-
-# With negative weights (Bellman-Ford)
-distances = bellman_ford(graph, source='A')
-
-# All-pairs shortest paths
-dist_matrix = floyd_warshall(graph)
+distances = bellman_ford(graph, source='A')  # Handles negative weights
+all_pairs = floyd_warshall(graph)
+path = a_star(graph, 'A', 'Z', heuristic=h)
 ```
 
 ### Connectivity
 
 ```python
 from AlgoGraph.algorithms import (
-    connected_components,
-    strongly_connected_components,
-    is_connected,
-    is_bipartite
+    connected_components, strongly_connected_components,
+    is_connected, is_bipartite, find_bridges, find_articulation_points
 )
 
-# Connected components (undirected)
 components = connected_components(graph)
-
-# Strongly connected components (directed)
 scc = strongly_connected_components(graph)
-
-# Check connectivity
-if is_connected(graph):
-    print("Graph is connected")
-
-# Check bipartiteness
-is_bip, coloring = is_bipartite(graph)
+bridges = find_bridges(graph)
+articulation = find_articulation_points(graph)
 ```
 
 ### Spanning Trees
@@ -190,290 +225,169 @@ is_bip, coloring = is_bipartite(graph)
 ```python
 from AlgoGraph.algorithms import minimum_spanning_tree, kruskal, prim
 
-# Minimum spanning tree
-mst = minimum_spanning_tree(graph)  # Uses Kruskal by default
+mst = minimum_spanning_tree(graph)
 mst = kruskal(graph)
 mst = prim(graph, start='A')
 ```
 
-### Centrality (NEW in v1.3.0)
+### Centrality
 
 ```python
 from AlgoGraph.algorithms import (
-    pagerank, betweenness_centrality, closeness_centrality
+    pagerank, betweenness_centrality, closeness_centrality,
+    degree_centrality, eigenvector_centrality
 )
 
-# Find influencers with PageRank
 pr = pagerank(social_network)
-top_influencer = max(pr, key=pr.get)
-
-# Find bridge people with betweenness
 bc = betweenness_centrality(network)
-top_broker = max(bc, key=bc.get)
-
-# Find central nodes with closeness
 cc = closeness_centrality(network)
 ```
 
-### Flow Networks (NEW in v1.3.0)
+### Flow Networks
 
 ```python
-from AlgoGraph.algorithms import max_flow, min_cut
+from AlgoGraph.algorithms import max_flow, min_cut, edmonds_karp
 
-# Maximum flow from source to sink
 flow_value = max_flow(network, 'Source', 'Sink')
-
-# Find bottleneck (minimum cut)
 cut_value, source_set, sink_set = min_cut(network, 'Source', 'Sink')
 ```
 
-### Matching (NEW in v1.3.0)
+### Matching
 
 ```python
-from AlgoGraph.algorithms import hopcroft_karp, is_perfect_matching
+from AlgoGraph.algorithms import hopcroft_karp, maximum_bipartite_matching, is_perfect_matching
 
-# Maximum bipartite matching (job assignment)
-workers = {'Alice', 'Bob', 'Charlie'}
-jobs = {'Backend', 'Frontend', 'DevOps'}
-matching = hopcroft_karp(assignments, workers, jobs)
-
-# Check if everyone can be matched
-if is_perfect_matching(assignments, workers, jobs):
-    print("Everyone gets a job!")
+matching = hopcroft_karp(bipartite_graph, left_set, right_set)
+max_matching = maximum_bipartite_matching(graph, left, right)
 ```
 
-### Graph Coloring (NEW in v1.3.0)
+### Graph Coloring
 
 ```python
-from AlgoGraph.algorithms import welsh_powell, chromatic_number
+from AlgoGraph.algorithms import welsh_powell, chromatic_number, dsatur, is_k_colorable
 
-# Exam scheduling (minimize time slots)
-conflicts = build_conflict_graph(exams)
-coloring = welsh_powell(conflicts)
-num_slots = chromatic_number(conflicts)
-print(f"Need {num_slots} exam time slots")
+coloring = welsh_powell(graph)
+num_colors = chromatic_number(graph)
+coloring = dsatur(graph)  # Often better than greedy
 ```
 
-## Design Philosophy
+## Serialization
 
-AlgoGraph follows the same design principles as AlgoTree:
+```python
+from AlgoGraph import save_graph, load_graph
 
-1. **Immutability**: All operations return new objects
-2. **Composability**: Operations chain naturally
-3. **Functional style**: Prefer pure functions
-4. **Type safety**: Full type hints
-5. **Clean separation**: Data structures vs algorithms
+# Save/load JSON
+save_graph(graph, 'network.json')
+graph = load_graph('network.json')
+```
 
-## Use Cases
+## AlgoTree Integration (Optional)
 
-- **Network analysis**: Social networks, computer networks
-- **Route planning**: Transportation, logistics
-- **Dependency graphs**: Build systems, package managers
-- **State machines**: Workflow, game logic
-- **Knowledge graphs**: Semantic networks, ontologies
-- **Tree structures**: When you need bidirectional navigation (use AlgoGraph), unidirectional parent-child (use AlgoTree)
+```python
+from AlgoTree import Node, Tree
+from AlgoGraph import tree_to_graph, graph_to_tree
 
-## When to Use AlgoGraph vs AlgoTree
+# Tree to Graph
+tree = Tree(Node('root', Node('child1'), Node('child2')))
+graph = tree_to_graph(tree)
 
-| Use AlgoGraph when... | Use AlgoTree when... |
-|----------------------|---------------------|
-| You have cycles in your structure | Your structure is acyclic (tree) |
-| You need bidirectional edges | Parent-child is sufficient |
-| Working with networks/graphs | Working with hierarchies |
-| Need to track edge weights/labels | Edges are just relationships |
-| Multiple paths between nodes | Single path between any two nodes |
+# Graph to Tree (extracts spanning tree)
+tree = graph_to_tree(graph, root='root')
+```
+
+## Interactive Shell
+
+Explore graphs with a filesystem-like interface:
+
+```bash
+pip install AlgoGraph
+algograph                    # Start with sample graph
+algograph network.json       # Load from file
+```
+
+```
+graph(5v):/$ ls
+Alice/  [2 neighbors]
+Bob/    [3 neighbors]
+
+graph(5v):/$ cd Alice
+graph(5v):/Alice$ ls
+Attributes:
+  age = 30
+neighbors/  [2 vertices]
+
+graph(5v):/Alice$ path Bob Eve
+Path found: Alice -> Bob -> Diana -> Eve
+```
 
 ## Examples
 
-### Social Network
+### Social Network Analysis
 
 ```python
-from AlgoGraph import Graph, Vertex, Edge
-
-# Create people
-alice = Vertex('Alice', attrs={'age': 30})
-bob = Vertex('Bob', attrs={'age': 25})
-charlie = Vertex('Charlie', attrs={'age': 35})
-
-# Create friendships (undirected)
-friend1 = Edge('Alice', 'Bob', directed=False)
-friend2 = Edge('Bob', 'Charlie', directed=False)
+from AlgoGraph import Graph
+from AlgoGraph.algorithms import pagerank, betweenness_centrality
+from AlgoGraph.transformers import filter_vertices, stats
+from AlgoGraph.graph_selectors import vertex as v
 
 # Build network
-network = Graph(
-    {alice, bob, charlie},
-    {friend1, friend2}
+network = (Graph.builder()
+    .add_vertex('Alice', followers=1000)
+    .add_vertex('Bob', followers=500)
+    .add_vertex('Charlie', followers=2000)
+    .add_edge('Alice', 'Bob', directed=False)
+    .add_edge('Bob', 'Charlie', directed=False)
+    .add_edge('Alice', 'Charlie', directed=False)
+    .build())
+
+# Find influencers
+pr = pagerank(network)
+top_influencer = max(pr, key=pr.get)
+
+# Find power users with selector
+power_users = network.select_vertices(
+    v.attrs(followers=lambda f: f > 800)
 )
 
-# Query network
-bobs_friends = network.neighbors('Bob')
-# {'Alice', 'Charlie'}
+# Analyze active subgraph
+analysis = (network
+    | filter_vertices(lambda v: v.get('followers', 0) > 500)
+    | stats())
 ```
 
 ### Road Network
 
 ```python
-# Cities
-cities = {
-    Vertex('NYC', attrs={'population': 8000000}),
-    Vertex('Boston', attrs={'population': 700000}),
-    Vertex('DC', attrs={'population': 700000})
-}
+from AlgoGraph import Graph
+from AlgoGraph.algorithms import dijkstra, minimum_spanning_tree
 
-# Roads with distances
-roads = {
-    Edge('NYC', 'Boston', weight=215.0, attrs={'highway': 'I-95'}),
-    Edge('NYC', 'DC', weight=225.0, attrs={'highway': 'I-95'}),
-    Edge('Boston', 'DC', weight=440.0)
-}
+roads = (Graph.builder()
+    .add_edge('NYC', 'Boston', weight=215, directed=False)
+    .add_edge('NYC', 'DC', weight=225, directed=False)
+    .add_edge('Boston', 'DC', weight=440, directed=False)
+    .build())
 
-road_network = Graph(cities, roads)
+# Shortest routes from NYC
+distances = dijkstra(roads, 'NYC')
 
-# Find shortest route
-from AlgoGraph.algorithms import dijkstra
-distances = dijkstra(road_network, 'NYC')
-print(f"NYC to DC: {distances['DC']} miles")
+# Minimum cost network
+mst = minimum_spanning_tree(roads)
 ```
 
-### Dependency Graph
+## Design Philosophy
 
-```python
-# Build dependencies
-packages = {Vertex(name) for name in ['app', 'lib1', 'lib2', 'utils']}
-deps = {
-    Edge('app', 'lib1'),
-    Edge('app', 'lib2'),
-    Edge('lib1', 'utils'),
-    Edge('lib2', 'utils')
-}
-
-dep_graph = Graph(packages, deps)
-
-# Get build order
-from AlgoGraph.algorithms import topological_sort
-build_order = topological_sort(dep_graph)
-# ['utils', 'lib1', 'lib2', 'app'] or ['utils', 'lib2', 'lib1', 'app']
-```
-
-## Installation
-
-AlgoGraph is an independent library that can be used standalone:
-
-```bash
-# For development (when in released/ directory)
-export PYTHONPATH=/path/to/released:$PYTHONPATH
-```
-
-```python
-# Use AlgoGraph standalone
-from AlgoGraph import Graph, Vertex, Edge
-from AlgoGraph.algorithms import dijkstra, bfs
-
-# For interop features, also add AlgoTree to PYTHONPATH
-export PYTHONPATH=/path/to/released:$PYTHONPATH
-from AlgoTree import Node, Tree
-from AlgoGraph import tree_to_graph, graph_to_tree
-```
-
-**Package structure:**
-```
-released/
-├── AlgoTree/      # Tree data structures
-└── AlgoGraph/     # Graph data structures (this library)
-```
-
-AlgoGraph works independently but provides optional interop with AlgoTree when both are available.
-
-## Interactive Shell
-
-AlgoGraph includes an interactive shell for exploring graphs with a filesystem-like interface.
-
-### Quick Start
-
-```bash
-cd /home/spinoza/github/released
-export PYTHONPATH=.
-python -m AlgoGraph.shell.shell
-```
-
-### Example Session
-
-```bash
-graph(5v):/$ ls
-Alice/  [2 neighbors]
-Bob/    [3 neighbors]
-Charlie/  [2 neighbors]
-
-graph(5v):/$ cd Alice
-Now at: /Alice
-
-graph(5v):/Alice$ ls
-Attributes:
-  age = 30
-  city = NYC
-
-neighbors/  [2 vertices]
-
-graph(5v):/Alice$ cd neighbors
-Now at: /Alice/neighbors
-
-graph(5v):/Alice/neighbors$ ls
-Bob/  <->
-Charlie/  <->
-
-graph(5v):/Alice/neighbors$ cd Bob
-Now at: /Bob
-
-graph(5v):/Bob$ path Alice Eve
-Path found: Alice -> Bob -> Diana -> Eve
-Length: 3 edges
-```
-
-### Navigation Model
-
-The shell treats graphs like a filesystem:
-- `/` - Graph root (lists all vertices)
-- `/vertex_id` - At a specific vertex (shows attributes + neighbors/)
-- `/vertex_id/neighbors` - Viewing neighbors you can navigate to
-
-### Available Commands
-
-**Navigation:**
-- `cd <vertex>` - Navigate to a vertex
-- `cd neighbors` - View neighbors of current vertex
-- `cd ..` - Go up one level
-- `ls` - List contents
-- `pwd` - Print current path
-
-**Information:**
-- `info` - Show graph or vertex information
-- `neighbors` - Show neighbors of current vertex
-- `find <vertex>` - Find a vertex
-
-**Graph Queries:**
-- `path <v1> <v2>` - Find path between vertices
-- `shortest <v1> <v2>` - Find shortest path
-- `components` - Show connected components
-- `bfs [start]` - Breadth-first search
-
-See [shell/README.md](shell/README.md) for complete documentation.
-
-## Future Enhancements
-
-Potential additions:
-
-- More graph algorithms (matching, flow, coloring)
-- Graph visualization export (GraphViz, etc.)
-- Serialization formats (JSON, GraphML, etc.)
-- Performance optimizations for large graphs
-- Shell enhancements (graph modification, bookmarks, history)
+1. **Immutability**: All operations return new objects
+2. **Composability**: Chain operations with `|` pipe operator
+3. **Declarative**: Express *what*, not *how* (selectors vs lambdas)
+4. **Lazy evaluation**: Views defer computation until needed
+5. **Type safety**: Full type hints throughout
 
 ## Related Projects
 
-- **AlgoTree**: Tree data structures and algorithms
-- **NetworkX**: Comprehensive Python graph library (mutable)
-- **graph-tool**: High-performance graph analysis
+- **[AlgoTree](https://github.com/queelius/AlgoTree)**: Tree data structures and algorithms
+- **[NetworkX](https://networkx.org/)**: Comprehensive Python graph library (mutable)
+- **[graph-tool](https://graph-tool.skewed.de/)**: High-performance graph analysis
 
 ## License
 
-Same as AlgoTree (see main repository LICENSE file).
+MIT License - see LICENSE file for details.
